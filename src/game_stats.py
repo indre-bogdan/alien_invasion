@@ -10,8 +10,12 @@ class GameStats():
         # Start Alien Invasion in an inactive state.
         self.game_active = False
         
-        # High score
-        self.high_score = 0
+        # Initialize the high score
+        try:
+            with open('high_score.txt', 'r') as f:
+                self.high_score = int(f.read())
+        except FileNotFoundError:
+            self.high_score = 0
         
     def reset_stats(self):
         """Initialize statistics that can change during the game."""

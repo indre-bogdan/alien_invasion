@@ -123,6 +123,14 @@ def ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets):
         # Pause.
         sleep(0.5)
     else:
+        try:
+            with open('high_score.txt', 'r') as f:
+                old_score = int(f.read())
+        except FileNotFoundError:
+            old_score = 0
+        if stats.high_score > old_score:
+            with open('high_score.txt', 'w') as f:
+                f.write(str(stats.high_score))
         stats.game_active = False
         pygame.mouse.set_visible(True)
 
