@@ -16,7 +16,17 @@ def check_events(ai_settings, screen, stats, sb, play_button, ship, aliens, bull
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 check_play_button(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets, mouse_x, mouse_y) 
-                
+
+def reset_ship_and_fleet(ai_settings, screen, ship, aliens, bullets):
+    """Reset the ship and the fleet."""
+    # Empty the list of aliens and bullets.
+    aliens.empty()
+    bullets.empty()
+        
+    # Create a new fleet and center the fleet.
+    create_fleet(ai_settings, screen, ship, aliens)
+    ship.center_ship()
+             
 def check_play_button(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets, mouse_x, mouse_y):
     """Start a new game when the player clicks play"""
     button_clicked = play_button.rect.collidepoint(mouse_x, mouse_y)
@@ -32,18 +42,9 @@ def check_play_button(ai_settings, screen, stats, sb, play_button, ship, aliens,
         stats.game_active = True
         
         # Reset the scoreboard
-        sb.prep_score()
-        sb.prep_high_score()
-        sb.prep_level()
-        sb.prep_ships()
+        sb.prep_images()
         
-        # Empty the list of aliens and bullets.
-        aliens.empty()
-        bullets.empty()
-        
-        # Create a new fleet and center the fleet.
-        create_fleet(ai_settings, screen, ship, aliens)
-        ship.center_ship()
+        reset_ship_and_fleet(ai_settings, screen, ship, aliens, bullets)
                 
 def check_keydown_events(event, ai_settings, screen, ship, bullets):
     """Respond to keypresses"""
@@ -74,6 +75,17 @@ def update_bullets(ai_settings, screen, stats, sb, ship, aliens, bullets):
     
     check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, aliens, bullets)
 
+def start_new_level(ai_settings, screen, stats, sb, ship, aliens, bullets):
+    """Start a new level"""
+    bullets.empty()
+    ai_settings.increase_speed()
+        
+    # Increase level
+    stats.level += 1
+    sb.prep_level()
+        
+    create_fleet(ai_settings, screen, ship, aliens)
+
 def check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, aliens, bullets):
     """Respond to bullet-alien collision"""
     # Check for any bullets that have hit aliens
@@ -87,14 +99,7 @@ def check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, aliens, b
         check_high_score(stats, sb)
     if len(aliens) == 0:
         # If an entire fleet is destroyed, start a new level
-        bullets.empty()
-        ai_settings.increase_speed()
-        
-        # Increase level
-        stats.level += 1
-        sb.prep_level()
-        
-        create_fleet(ai_settings, screen, ship, aliens)
+        start_new_level(ai_settings, screen, stats, sb, ship, aliens, bullets)
          
 def fire_bullet(ai_settings, screen, ship, bullets):
     """Creates a new bullet and fires it"""
@@ -102,9 +107,24 @@ def fire_bullet(ai_settings, screen, ship, bullets):
         new_bullet = Bullet(ai_settings, screen, ship)
         bullets.add(new_bullet)
 
-def ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets):
-    """Respond to a ship being hit by alien."""
+def end_game(stats):
+    """Ends the game and saves the high score."""
+    # Save high score.
+    try:
+        with open('high_score.txt', 'r') as f:
+            old_score = int(f.read())
+    except FileNotFoundError:
+        old_score = 0
+    if stats.high_score > old_score:
+        with open('high_score.txt', 'w') as f:
+            f.write(str(stats.high_score))
+            
+    # Set the game inactive.
+    stats.game_active = False
+    pygame.mouse.set_visible(True)
     
+def ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets):
+    """Respond to a ship being hit by alien.""" 
     if stats.ships_left > 0:
         # Decrement ships left
         stats.ships_left -= 1
@@ -112,27 +132,12 @@ def ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets):
         # Update the scoreboard
         sb.prep_ships()
         
-        # Empty the list of aliens and bullets.
-        aliens.empty()
-        bullets.empty()
-        
-        # Create a new fleet and center the ship.
-        create_fleet(ai_settings, screen, ship, aliens)
-        ship.center_ship()
+        reset_ship_and_fleet(ai_settings, screen, ship, aliens, bullets)
         
         # Pause.
         sleep(0.5)
     else:
-        try:
-            with open('high_score.txt', 'r') as f:
-                old_score = int(f.read())
-        except FileNotFoundError:
-            old_score = 0
-        if stats.high_score > old_score:
-            with open('high_score.txt', 'w') as f:
-                f.write(str(stats.high_score))
-        stats.game_active = False
-        pygame.mouse.set_visible(True)
+        end_game(stats)
 
 def check_aliens_bottom(ai_settings, stats, sb, screen, ship, aliens, bullets):
     """Check if any aliens have reached the bottom of the screen."""
