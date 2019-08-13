@@ -4,13 +4,13 @@ from src.bullet import Bullet
 from src.alien import Alien
 from time import sleep
 
-def check_events(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets):
+def check_events(ai_settings, screen, stats, sb, play_button, ship, sounds, aliens, bullets):
     """Respond to keypresses and mouse events"""
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                check_keydown_events(event, ai_settings, screen, ship, bullets)
+                check_keydown_events(event, ai_settings, screen, ship, sounds, bullets)
             elif event.type == pygame.KEYUP:
                 check_keyup_events(event, ship)
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -46,7 +46,7 @@ def check_play_button(ai_settings, screen, stats, sb, play_button, ship, aliens,
         
         reset_ship_and_fleet(ai_settings, screen, ship, aliens, bullets)
                 
-def check_keydown_events(event, ai_settings, screen, ship, bullets):
+def check_keydown_events(event, ai_settings, screen, ship, sounds, bullets):
     """Respond to keypresses"""
     if event.key == pygame.K_q:
         sys.exit()
@@ -55,7 +55,7 @@ def check_keydown_events(event, ai_settings, screen, ship, bullets):
     if event.key == pygame.K_LEFT:
         ship.moving_left = True
     if event.key == pygame.K_SPACE:
-        fire_bullet(ai_settings, screen, ship, bullets)
+        fire_bullet(ai_settings, screen, ship, sounds, bullets)
         
 def check_keyup_events(event, ship):
     """Respond to key releases"""
@@ -64,7 +64,7 @@ def check_keyup_events(event, ship):
     if event.key == pygame.K_LEFT:
         ship.moving_left = False
 
-def update_bullets(ai_settings, screen, stats, sb, ship, aliens, bullets):
+def update_bullets(ai_settings, screen, stats, sb, ship, sounds, aliens, bullets):
     """Update the bullets and get rid of the old ones"""
     bullets.update()
         
@@ -73,10 +73,11 @@ def update_bullets(ai_settings, screen, stats, sb, ship, aliens, bullets):
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
     
-    check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, aliens, bullets)
+    check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, sounds, aliens, bullets)
 
-def start_new_level(ai_settings, screen, stats, sb, ship, aliens, bullets):
+def start_new_level(ai_settings, screen, stats, sb, ship, sounds, aliens, bullets):
     """Start a new level"""
+    sounds.play_next_level_sound()
     bullets.empty()
     ai_settings.increase_speed()
         
@@ -86,7 +87,7 @@ def start_new_level(ai_settings, screen, stats, sb, ship, aliens, bullets):
         
     create_fleet(ai_settings, screen, ship, aliens)
 
-def check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, aliens, bullets):
+def check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, sounds, aliens, bullets):
     """Respond to bullet-alien collision"""
     # Check for any bullets that have hit aliens
     # if so, get rid of the bullet and the alien
@@ -96,16 +97,18 @@ def check_bullet_alien_collision(ai_settings, screen, stats, sb, ship, aliens, b
         for aliens in collisions.values():
             stats.score += ai_settings.alien_points * len(aliens)
             sb.prep_score()
+            sounds.play_explosion_sound()
         check_high_score(stats, sb)
     if len(aliens) == 0:
         # If an entire fleet is destroyed, start a new level
-        start_new_level(ai_settings, screen, stats, sb, ship, aliens, bullets)
+        start_new_level(ai_settings, screen, stats, sb, ship, sounds, aliens, bullets)
          
-def fire_bullet(ai_settings, screen, ship, bullets):
+def fire_bullet(ai_settings, screen, ship, sounds, bullets):
     """Creates a new bullet and fires it"""
     if len(bullets) < ai_settings.bullets_allowed:
         new_bullet = Bullet(ai_settings, screen, ship)
         bullets.add(new_bullet)
+        sounds.play_shooting_sound()
 
 def end_game(stats, screen):
     """Ends the game and saves the high score."""
@@ -232,7 +235,7 @@ def update_screen(ai_settings, screen, sb, ship, aliens, bullets):
     # Make the most recently drawn screen visible.
     pygame.display.flip()
 
-def display_menu_screen(ai_settings, screen, stats, play_button):
+def display_menu_screen(ai_settings, screen, play_button):
     """Displays the menu screen."""
     
     # Draw the screen
