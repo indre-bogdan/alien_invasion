@@ -107,8 +107,9 @@ def fire_bullet(ai_settings, screen, ship, bullets):
         new_bullet = Bullet(ai_settings, screen, ship)
         bullets.add(new_bullet)
 
-def end_game(stats):
+def end_game(stats, screen):
     """Ends the game and saves the high score."""
+    
     # Save high score.
     try:
         with open('high_score.txt', 'r') as f:
@@ -118,6 +119,8 @@ def end_game(stats):
     if stats.high_score > old_score:
         with open('high_score.txt', 'w') as f:
             f.write(str(stats.high_score))
+    
+    display_end_score(screen)
             
     # Set the game inactive.
     stats.game_active = False
@@ -137,7 +140,7 @@ def ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets):
         # Pause.
         sleep(0.5)
     else:
-        end_game(stats)
+        end_game(stats, screen)
 
 def check_aliens_bottom(ai_settings, stats, sb, screen, ship, aliens, bullets):
     """Check if any aliens have reached the bottom of the screen."""
@@ -199,7 +202,7 @@ def change_fleet_direction(ai_settings, aliens):
     ai_settings.fleet_direction *= -1
         
 def check_fleet_edges(ai_settings, aliens):
-    """Respond appropriately if any aliens have reached an edge"""
+    """Respond appropriately if any aliens have reached an edge."""
     for alien in aliens.sprites():
         if alien.check_edge():
             change_fleet_direction(ai_settings, aliens)
@@ -211,7 +214,7 @@ def check_high_score(stats, sb):
         stats.high_score = stats.score
         sb.prep_high_score()
    
-def update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets, play_button):
+def update_screen(ai_settings, screen, sb, ship, aliens, bullets):
     """Update images on the screen and flip to the new screen"""
  
     # Redraw the screen
@@ -226,8 +229,33 @@ def update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets, play_bu
     # Draw the score information.
     sb.show_score()
     
-    # Draw the play button if the game is inactive.
-    if not stats.game_active:
-        play_button.draw_button()
-    #Make the most recently drawn screen visible.
+    # Make the most recently drawn screen visible.
     pygame.display.flip()
+
+def display_menu_screen(ai_settings, screen, stats, play_button):
+    """Displays the menu screen."""
+    
+    # Draw the screen
+    screen.fill(ai_settings.bg_color)
+    
+    play_button.draw_button()
+    
+    # Make the most recently drawn screen visible.
+    pygame.display.flip()
+
+def display_end_score(screen):
+    """Displays the end score."""
+    
+    text_color = (30, 30, 30)
+    font = pygame.font.SysFont(None, 60)
+    text_image = font.render('GAME OVER', True, text_color)
+    text_rect = text_image.get_rect()
+    text_rect.centerx = screen.get_rect().centerx
+    text_rect.centery = screen.get_rect().centery - 100
+    screen.blit(text_image, text_rect)
+    
+    # Make the most recently drawn screen visible.
+    pygame.display.flip()
+    
+    # Pause
+    sleep(1)
